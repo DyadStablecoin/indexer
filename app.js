@@ -1,12 +1,13 @@
 import { createClient } from "@supabase/supabase-js";
 import Web3 from "web3";
-import web3 from "web3-eth";
+// import web3 from "web3-eth";
 import Contract from "web3-eth-contract";
 import { dNFT_ABI } from "./abi.js";
 
 const dNFT = "0xEf569857eF000566272cDfc5Bf5E8681f347A871";
 const N_NFTS = 100;
-const INFURA = "https://goerli.infura.io/v3/786a7764b8234b06b4cd6764a1646a17";
+// const INFURA = "https://goerli.infura.io/v3/786a7764b8234b06b4cd6764a1646a17";
+const INFURA = "wss://goerli.infura.io/ws/v3/786a7764b8234b06b4cd6764a1646a17";
 
 // Create a single supabase client for interacting with your database
 const supabase = createClient(
@@ -37,14 +38,6 @@ async function syncXP() {
 }
 
 async function subXP() {
-  // var subscription = web3.eth.subscribe('logs', {
-  //   address: '0x123456..',
-  //   topics: ['0x12345...']
-  // }, function(error, result){
-  //   if (!error)
-  //       console.log(result);
-  // });
-
   /*
    * we need to check if the old value was not max or min!
    */
@@ -74,10 +67,38 @@ async function subXP() {
   console.log(error);
 }
 
-Contract.setProvider(INFURA);
+var web3 = new Web3(INFURA);
+var subscription = web3.eth
+  .subscribe(
+    "logs",
+    {
+      address: "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6", // weth
+      topics: [
+        "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+      ],
+    },
+    function (error, result) {
+      console.log(3333);
+      if (!error) console.log(result);
+    }
+  )
+  .on("connected", function (subscriptionId) {
+    console.log("SubID: ", subscriptionId);
+  })
+  .on("data", function (event) {
+    console.log("Event:", event);
+    // do stuff here
+  })
+  .on("changed", function (event) {
+    //Do something when it is removed from the database.
+  })
+  .on("error", function (error, receipt) {
+    console.log("Error:", error, receipt);
+  });
 
 // syncXP();
-subXP();
+// subXP();
+// const ss = sub();
 
 // console.log(web3);
 // setUpNftTable();
