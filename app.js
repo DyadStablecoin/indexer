@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 
-const N_NFTS = 10;
+const N_NFTS = 100;
 
 // Create a single supabase client for interacting with your database
 const supabase = createClient(
@@ -9,15 +9,14 @@ const supabase = createClient(
 );
 
 async function setUpNftTable() {
+  // If row exists it will not be overwritten!
   var rows = [];
   for (let i = 0; i < N_NFTS; i++) {
     rows.push({ index: i });
   }
-  const { error } = await supabase.from("nfts").insert(rows);
+  const { error } = await supabase.from("nfts").upsert(rows);
+  console.log(error);
 }
 
-const { data, error } = await supabase.from("nfts").select();
-
-console.log(data);
-
+console.log(333);
 setUpNftTable();
