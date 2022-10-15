@@ -23,11 +23,21 @@ async function setUpNftTable() {
   console.log(error);
 }
 
+async function syncXP() {
+  var contract = new Contract(dNFT_ABI, dNFT);
+  var rows = [];
+  for (let i = 0; i < N_NFTS; i++) {
+    console.log(i);
+    const xp = await contract.methods.xp(i).call();
+    rows.push({ index: i, xp: xp });
+  }
+  const { error } = await supabase.from("nfts").upsert(rows);
+  console.log(error);
+}
+
 Contract.setProvider(INFURA);
 
-var contract = new Contract(dNFT_ABI, dNFT);
-
-contract.methods.xp(1).call().then(console.log);
+syncXP();
 
 // console.log(web3);
 // setUpNftTable();
