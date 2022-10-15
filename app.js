@@ -1,6 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
+import Web3 from "web3";
+import Contract from "web3-eth-contract";
+import { dNFT_ABI } from "./abi.js";
 
+const dNFT = "0xEf569857eF000566272cDfc5Bf5E8681f347A871";
 const N_NFTS = 100;
+const INFURA = "https://goerli.infura.io/v3/786a7764b8234b06b4cd6764a1646a17";
 
 // Create a single supabase client for interacting with your database
 const supabase = createClient(
@@ -18,5 +23,11 @@ async function setUpNftTable() {
   console.log(error);
 }
 
-console.log(333);
-setUpNftTable();
+Contract.setProvider(INFURA);
+
+var contract = new Contract(dNFT_ABI, dNFT);
+
+contract.methods.xp(1).call().then(console.log);
+
+// console.log(web3);
+// setUpNftTable();
