@@ -43,14 +43,16 @@ async function subXP() {
    */
 
   // just for testing
-  const newXP = -1500;
+  const newXP = 11500;
 
   // always has column id 0
   const { data } = await supabase.from("sum").select().eq("id", 0);
+  console.log(data);
   const minXP = parseInt(data[0].minXP);
   const maxXP = parseInt(data[0].maxXP);
 
   if (newXP < minXP) {
+    console.log("newXP < minXP");
     const { error } = await supabase
       .from("sum")
       .update({ minXP: newXP })
@@ -59,46 +61,66 @@ async function subXP() {
   }
 
   if (newXP > maxXP) {
+    console.log("newXP > minXP");
     const { error } = await supabase
       .from("sum")
       .update({ maxXP: newXP })
       .eq("id", 0);
   }
-  console.log(error);
 }
 
-var web3 = new Web3(INFURA);
-var subscription = web3.eth
-  .subscribe(
-    "logs",
-    {
-      address: "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6", // weth
-      topics: [
-        "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
-      ],
-    },
-    function (error, result) {
-      console.log(3333);
-      if (!error) console.log(result);
-    }
-  )
-  .on("connected", function (subscriptionId) {
-    console.log("SubID: ", subscriptionId);
-  })
-  .on("data", function (event) {
-    console.log("Event:", event);
-    // do stuff here
-  })
-  .on("changed", function (event) {
-    //Do something when it is removed from the database.
-  })
-  .on("error", function (error, receipt) {
-    console.log("Error:", error, receipt);
+function sub() {
+  var web3 = new Web3(INFURA);
+  var subscription = web3.eth
+    .subscribe(
+      "logs",
+      {
+        address: "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6", // weth
+        topics: [
+          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+        ],
+      },
+      function (error, result) {
+        console.log(3333);
+        if (!error) console.log(result);
+      }
+    )
+    .on("connected", function (subscriptionId) {
+      console.log("SubID: ", subscriptionId);
+    })
+    .on("data", function (event) {
+      console.log("Event:", event);
+      // do stuff here
+    })
+    .on("changed", function (event) {
+      //Do something when it is removed from the database.
+    })
+    .on("error", function (error, receipt) {
+      console.log("Error:", error, receipt);
+    });
+}
+
+async function calcAverageXP() {
+  var average = 0;
+  const { data } = await supabase.from("nfts").select("xp");
+  data.map((d) => {
+    average += parseInt(d.xp);
   });
+  average = average / N_NFTS;
+  console.log(average);
+  const { error } = await supabase
+    .from("sum")
+    .update({ averageXP: average })
+    .eq("id", 0);
+  console.log(error);
+  // console.log(data);
+}
 
 // syncXP();
 // subXP();
 // const ss = sub();
+calcAverageXP();
 
+// sub();
 // console.log(web3);
 // setUpNftTable();
