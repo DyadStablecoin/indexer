@@ -36,7 +36,7 @@ async function syncXP() {
   console.log(error);
 }
 
-function subscribe() {
+async function subXP() {
   // var subscription = web3.eth.subscribe('logs', {
   //   address: '0x123456..',
   //   topics: ['0x12345...']
@@ -44,11 +44,40 @@ function subscribe() {
   //   if (!error)
   //       console.log(result);
   // });
+
+  /*
+   * we need to check if the old value was not max or min!
+   */
+
+  // just for testing
+  const newXP = -1500;
+
+  // always has column id 0
+  const { data } = await supabase.from("sum").select().eq("id", 0);
+  const minXP = parseInt(data[0].minXP);
+  const maxXP = parseInt(data[0].maxXP);
+
+  if (newXP < minXP) {
+    const { error } = await supabase
+      .from("sum")
+      .update({ minXP: newXP })
+      .eq("id", 0);
+    console.log(error);
+  }
+
+  if (newXP > maxXP) {
+    const { error } = await supabase
+      .from("sum")
+      .update({ maxXP: newXP })
+      .eq("id", 0);
+  }
+  console.log(error);
 }
 
 Contract.setProvider(INFURA);
 
-syncXP();
+// syncXP();
+subXP();
 
 // console.log(web3);
 // setUpNftTable();
