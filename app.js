@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import Web3 from "web3";
+import web3 from "web3-eth";
 import Contract from "web3-eth-contract";
 import { dNFT_ABI } from "./abi.js";
 
@@ -33,6 +34,16 @@ async function syncXP() {
   }
   const { error } = await supabase.from("nfts").upsert(rows);
   console.log(error);
+}
+
+function subscribe() {
+  // var subscription = web3.eth.subscribe('logs', {
+  //   address: '0x123456..',
+  //   topics: ['0x12345...']
+  // }, function(error, result){
+  //   if (!error)
+  //       console.log(result);
+  // });
 }
 
 Contract.setProvider(INFURA);
