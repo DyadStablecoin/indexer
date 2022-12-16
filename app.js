@@ -62,7 +62,7 @@ async function subscribeToSync() {
         ],
       },
       function (error, result) {
-        await refresh();
+        refresh();
         if (!error) console.log(result);
       }
     )
