@@ -3,16 +3,18 @@ import Web3 from "web3";
 // import web3 from "web3-eth";
 import Contract from "web3-eth-contract";
 import { dNFT_ABI } from "./abi.js";
+import * as dotenv from "dotenv";
+dotenv.config();
 
 const dNFT = "0xEf569857eF000566272cDfc5Bf5E8681f347A871";
 const N_NFTS = 100;
 // const INFURA = "https://goerli.infura.io/v3/786a7764b8234b06b4cd6764a1646a17";
-const INFURA = "wss://goerli.infura.io/ws/v3/786a7764b8234b06b4cd6764a1646a17";
+const INFURA = `wss://goerli.infura.io/ws/v3/${process.env.GOERLI_INFURA_PROJECT_ID}`;
 
 // Create a single supabase client for interacting with your database
 const supabase = createClient(
-  "https://zdsoetzzluqvefxlchjm.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpkc29ldHp6bHVxdmVmeGxjaGptIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NjU4NTUwMDgsImV4cCI6MTk4MTQzMTAwOH0.7JY7WEW4dIKuPdBH3IXMIR7LNo3u67UWD1bAmMiP-7s"
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY
 );
 
 async function setUpNftTable() {
