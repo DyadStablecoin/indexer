@@ -49,10 +49,10 @@ async function refresh() {
   return 0;
 }
 
-async function subscribeToSync() {
-  await refresh();
+function subscribeToSync() {
+  refresh();
   console.log("subscribing to sync");
-  var subscription = web3.eth
+  web3.eth
     .subscribe(
       "logs",
       {
