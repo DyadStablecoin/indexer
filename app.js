@@ -2,20 +2,50 @@ import { createClient } from "@supabase/supabase-js";
 import Web3 from "web3";
 // import web3 from "web3-eth";
 import Contract from "web3-eth-contract";
-import { dNFT_ABI } from "./abi.js";
+import dNFT_ABI from "./abi/dNFT.json" assert { type: "json" };
 import * as dotenv from "dotenv";
 dotenv.config();
 
-const dNFT = "0xEf569857eF000566272cDfc5Bf5E8681f347A871";
-const N_NFTS = 100;
-// const INFURA = "https://goerli.infura.io/v3/786a7764b8234b06b4cd6764a1646a17";
+const dNFT = "0x2544bA4Bc4A1d4Eb834a2770Fd5B52bAfa500B44";
+const N_NFTS = 300;
 const INFURA = `wss://goerli.infura.io/ws/v3/${process.env.GOERLI_INFURA_PROJECT_ID}`;
+console.log(INFURA);
 
 // Create a single supabase client for interacting with your database
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_KEY
 );
+
+Contract.setProvider(INFURA);
+
+function sortByXp(nfts) {
+  return nfts.sort(function (a, b) {
+    return a.xp < b.xp ? 1 : b.xp < a.xp ? -1 : 0;
+  });
+}
+
+async function setup() {
+  var contract = new Contract(dNFT_ABI["abi"], dNFT);
+  const totalSupply = await contract.methods.totalSupply().call();
+
+  let nfts = [];
+
+  for (let i = 0; i < totalSupply; i++) {
+    console.log(i);
+    const tokenId = await contract.methods.tokenByIndex(i).call();
+    const nft = await contract.methods.idToNft(tokenId).call();
+    nfts.push(nft);
+    console.log(nft);
+    if (i == 5) {
+      break;
+    }
+  }
+
+  console.log(sortByXp(nfts));
+}
+
+setup();
 
 async function setUpNftTable() {
   // If row exists it will not be overwritten!
@@ -121,7 +151,7 @@ async function calcAverageXP() {
 // syncXP();
 // subXP();
 // const ss = sub();
-calcAverageXP();
+// calcAverageXP();
 
 // sub();
 // console.log(web3);
