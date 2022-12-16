@@ -36,7 +36,7 @@ async function refresh() {
   let nfts = [];
 
   for (let i = 0; i < totalSupply; i++) {
-    console.log(i);
+    // console.log(i);
     const tokenId = await contract.methods.tokenByIndex(i).call();
     const nft = await contract.methods.idToNft(tokenId).call();
     nfts.push({
