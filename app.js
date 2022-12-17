@@ -1,84 +1,90 @@
 import { createClient } from "@supabase/supabase-js";
 import Web3 from "web3";
-// import web3 from "web3-eth";
 import Contract from "web3-eth-contract";
 import dNFT_ABI from "./abi/dNFT.json" assert { type: "json" };
+import { Alchemy, Network } from "alchemy-sdk";
 import * as dotenv from "dotenv";
 dotenv.config();
 
-const dNFT = "0x2544bA4Bc4A1d4Eb834a2770Fd5B52bAfa500B44";
-const POOL = "0xC98D30Cf8837dE6ae019D37084f1893751D47C4E";
-const INFURA = `wss://goerli.infura.io/ws/v3/${process.env.GOERLI_INFURA_PROJECT_ID}`;
+const config = {
+  apiKey: process.env.ALCHEMY_KEY,
+  network: Network.ETH_MAINNET,
+};
 
-// Create a single supabase client for interacting with your database
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_KEY
 );
 
-var web3 = new Web3(INFURA);
-Contract.setProvider(INFURA);
+var web3 = new Web3(process.env.INFURA_RPC);
+Contract.setProvider(process.env.INFURA_RPC);
 
-function sortByXp(nfts) {
-  return nfts.sort(function (a, b) {
-    return a.xp < b.xp ? 1 : b.xp < a.xp ? -1 : 0;
+const alchemy = new Alchemy(config);
+
+const ENS_ADDRESS = "0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85";
+
+export async function getEnsName(address) {
+  // return the first ens name that we can find
+  const nfts = await alchemy.nft.getNftsForOwner(address, {
+    contractAddresses: [ENS_ADDRESS],
   });
+
+  try {
+    return nfts.ownedNfts[0].title;
+  } catch (e) {
+    return "";
+  }
 }
 
-async function updateNftTable(nfts) {
-  const { error } = await supabase.from("nfts").upsert(sortByXp(nfts));
-}
-
-async function refresh() {
-  var contract = new Contract(dNFT_ABI["abi"], dNFT);
+async function refreshNftTable() {
+  var contract = new Contract(dNFT_ABI["abi"], process.env.dNFT_ADDRESS);
   const totalSupply = await contract.methods.totalSupply().call();
 
   let nfts = [];
 
   for (let i = 0; i < totalSupply; i++) {
-    // console.log(i);
+    console.log(`Fetching NFT ${i} of ${totalSupply}`);
     const tokenId = await contract.methods.tokenByIndex(i).call();
     const nft = await contract.methods.idToNft(tokenId).call();
+    const owner = await contract.methods.ownerOf(tokenId).call();
+    const ensName = await getEnsName(owner);
+
     nfts.push({
       id: tokenId,
       xp: nft.xp,
+      withdrawn: nft.withdrawn,
+      deposit: nft.deposit,
+      owner: owner,
+      ensName: ensName,
+      contractAddress: process.env.dNFT_ADDRESS,
     });
   }
 
-  await updateNftTable(sortByXp(nfts));
-  return 0;
+  const { error } = await supabase.from("nfts").upsert(nfts);
+}
+
+function updateSyncTable() {
+  supabase.from("sync").insert({ contractAddress: process.env.dNFT_ADDRESS });
 }
 
 function subscribeToSync() {
-  refresh();
   console.log("subscribing to sync");
-  web3.eth
-    .subscribe(
-      "logs",
-      {
-        address: POOL,
-        topics: [
-          "0xff14d8520387b9b85d2a017dc41ae15db04a22d4c67deac04eb45048631ffa86",
-        ],
-      },
-      function (error, result) {
-        refresh();
-        if (!error) console.log(result);
-      }
-    )
-    .on("connected", function (subscriptionId) {
-      console.log("SubID: ", subscriptionId);
-    })
-    .on("data", function (event) {
-      console.log("Event:", event);
-      // do stuff here
-    })
-    .on("changed", function (event) {
-      //Do something when it is removed from the database.
-    })
-    .on("error", function (error, receipt) {
-      console.log("Error:", error, receipt);
-    });
+  web3.eth.subscribe(
+    "logs",
+    {
+      address: process.env.POOL_ADDRESS,
+      topics: [
+        "0xff14d8520387b9b85d2a017dc41ae15db04a22d4c67deac04eb45048631ffa86",
+      ],
+    },
+    function (error, result) {
+      refreshNftTable();
+      updateSyncTable();
+
+      if (!error) console.log(result);
+    }
+  );
 }
 
+refreshNftTable();
 subscribeToSync();

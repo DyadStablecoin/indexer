@@ -12,6 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "@supabase/supabase-js": "^2.0.0",
+    "alchemy-sdk": "^2.2.4",
     "dotenv": "^16.0.3",
     "web3": "^1.8.0"
   }
