@@ -63,11 +63,13 @@ async function refreshNftTable() {
   const { error } = await supabase.from("nfts").upsert(nfts);
 }
 
-function pushSyncEvent() {
-  supabase.from("sync").insert({
+async function pushSyncEvent() {
+  console.log("pushing sync event");
+  const { error } = await supabase.from("sync").insert({
     contractAddress: process.env.dNFT_ADDRESS,
     mode: process.env.MODE,
   });
+  console.log(error);
 }
 
 function subscribeToSync() {
