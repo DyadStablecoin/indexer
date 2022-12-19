@@ -3,7 +3,6 @@ import Web3 from "web3";
 import Contract from "web3-eth-contract";
 import dNFT_ABI from "./abi/dNFT.json" assert { type: "json" };
 import * as dotenv from "dotenv";
-import { getEnsName } from "./utils.js";
 dotenv.config();
 
 const supabase = createClient(
@@ -72,6 +71,9 @@ async function upsertNfts() {
   }
 }
 
+/**
+ *
+ */
 async function insertSyncEvent() {
   console.log("inserting sync event");
   const { error } = await supabase.from("sync").insert({
@@ -81,6 +83,9 @@ async function insertSyncEvent() {
   console.log(error);
 }
 
+/**
+ * listen to sync events and upsert all NFTs
+ */
 function subscribeToSync() {
   console.log("subscribing to sync");
   web3.eth.subscribe(
