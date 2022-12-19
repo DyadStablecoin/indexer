@@ -54,7 +54,21 @@ async function getLastVersion() {
       ascending: false,
     });
 
-  return oldVersion.data[0].version + 1;
+  try {
+    return oldVersion.data[0].version + 1;
+  } catch {
+    return 0;
+  }
+}
+
+async function deleteOldNfts(oldVersion) {
+  console.log("deleting old nfts");
+  const { error } = await supabase
+    .from("nfts")
+    .delete()
+    .eq("contractAddress", process.env.dNFT_ADDRESS)
+    .lte("version", oldVersion);
+  console.log(error);
 }
 
 /**
@@ -70,6 +84,9 @@ async function upsertNfts() {
   for (let i = 0; i < totalSupply; i++) {
     upsertNft(i, newVersion);
   }
+
+  deleteOldNfts(lastVersion);
+  insertSyncEvent();
 }
 
 /**
@@ -99,7 +116,6 @@ function subscribeToSync() {
     },
     function (error, result) {
       upsertNfts();
-      insertSyncEvent();
 
       if (!error) console.log(result);
     }
