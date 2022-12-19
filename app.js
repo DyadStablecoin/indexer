@@ -45,7 +45,7 @@ async function upsertNft(i, newVersion) {
 /**
  *
  */
-async function getNewVersion() {
+async function getLastVersion() {
   let oldVersion = await supabase
     .from("nfts")
     .select("version")
@@ -61,7 +61,8 @@ async function getNewVersion() {
  * Upsert all NFTs from 0 to totalSupply
  */
 async function upsertNfts() {
-  const newVersion = await getNewVersion();
+  const lastVersion = await getLastVersion();
+  const newVersion = lastVersion + 1;
   console.log(`new version: ${newVersion}`);
 
   const totalSupply = await dNftContract.methods.totalSupply().call();
