@@ -36,31 +36,49 @@ export async function getEnsName(address) {
   }
 }
 
+async function fetchNft(i, latestVersion) {
+  console.log(i);
+  var contract = new Contract(dNFT_ABI["abi"], process.env.dNFT_ADDRESS);
+
+  const tokenId = await contract.methods.tokenByIndex(i).call();
+  const nft = await contract.methods.idToNft(tokenId).call();
+  const owner = await contract.methods.ownerOf(tokenId).call();
+  // const ensName = await getEnsName(owner);
+
+  const _nft = {
+    id: tokenId,
+    xp: nft.xp,
+    owner: owner,
+    contractAddress: process.env.dNFT_ADDRESS,
+    version: latestVersion,
+  };
+
+  console.log(`upsert ${tokenId}`);
+  const { error } = await supabase.from("nfts").upsert(_nft);
+  console.log(error);
+}
+
 async function refreshNftTable() {
   var contract = new Contract(dNFT_ABI["abi"], process.env.dNFT_ADDRESS);
   const totalSupply = await contract.methods.totalSupply().call();
 
-  let nfts = [];
-
-  for (let i = 0; i < totalSupply; i++) {
-    console.log(`Fetching NFT ${i} of ${totalSupply}`);
-    const tokenId = await contract.methods.tokenByIndex(i).call();
-    const nft = await contract.methods.idToNft(tokenId).call();
-    const owner = await contract.methods.ownerOf(tokenId).call();
-    const ensName = await getEnsName(owner);
-
-    nfts.push({
-      id: tokenId,
-      xp: nft.xp,
-      withdrawn: nft.withdrawn,
-      deposit: nft.deposit,
-      owner: owner,
-      ensName: ensName,
-      contractAddress: process.env.dNFT_ADDRESS,
+  let latestVersion = await supabase
+    .from("nfts")
+    .select("version")
+    .limit(1)
+    .order("version", {
+      ascending: false,
     });
+
+  try {
+    latestVersion = latestVersion.data[0].version + 1;
+  } catch (e) {
+    latestVersion = 0;
   }
 
-  const { error } = await supabase.from("nfts").upsert(nfts);
+  for (let i = 0; i < totalSupply; i++) {
+    fetchNft(i, latestVersion);
+  }
 }
 
 async function pushSyncEvent() {
