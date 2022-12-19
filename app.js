@@ -2,14 +2,9 @@ import { createClient } from "@supabase/supabase-js";
 import Web3 from "web3";
 import Contract from "web3-eth-contract";
 import dNFT_ABI from "./abi/dNFT.json" assert { type: "json" };
-import { Alchemy, Network } from "alchemy-sdk";
 import * as dotenv from "dotenv";
+import { getEnsName } from "./utils.js";
 dotenv.config();
-
-const config = {
-  apiKey: process.env.ALCHEMY_KEY,
-  network: Network.ETH_MAINNET,
-};
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -19,38 +14,28 @@ const supabase = createClient(
 var web3 = new Web3(process.env.INFURA_RPC);
 Contract.setProvider(process.env.INFURA_RPC);
 
-const alchemy = new Alchemy(config);
+const dNftContract = new Contract(dNFT_ABI["abi"], process.env.dNFT_ADDRESS);
 
-const ENS_ADDRESS = "0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85";
-
-export async function getEnsName(address) {
-  // return the first ens name that we can find
-  const nfts = await alchemy.nft.getNftsForOwner(address, {
-    contractAddresses: [ENS_ADDRESS],
-  });
-
-  try {
-    return nfts.ownedNfts[0].title;
-  } catch (e) {
-    return "";
-  }
-}
-
-async function fetchNft(i, latestVersion) {
+/**
+ * Upsert (update if exists or insert if not) a single NFT
+ * @param {i} index from 0 to totalSupply
+ * @param {newVersion} version of the sync
+ */
+async function upsertNft(i, newVersion) {
   console.log(i);
-  var contract = new Contract(dNFT_ABI["abi"], process.env.dNFT_ADDRESS);
 
-  const tokenId = await contract.methods.tokenByIndex(i).call();
-  const nft = await contract.methods.idToNft(tokenId).call();
-  const owner = await contract.methods.ownerOf(tokenId).call();
-  // const ensName = await getEnsName(owner);
+  const tokenId = await dNftContract.methods.tokenByIndex(i).call();
+  const nft = await dNftContract.methods.idToNft(tokenId).call();
+  const owner = await dNftContract.methods.ownerOf(tokenId).call();
 
   const _nft = {
     id: tokenId,
     xp: nft.xp,
+    deposit: nft.deposit,
+    withdrawan: nft.withdrawan,
     owner: owner,
     contractAddress: process.env.dNFT_ADDRESS,
-    version: latestVersion,
+    version: newVersion,
   };
 
   console.log(`upsert ${tokenId}`);
@@ -58,11 +43,11 @@ async function fetchNft(i, latestVersion) {
   console.log(error);
 }
 
-async function refreshNftTable() {
-  var contract = new Contract(dNFT_ABI["abi"], process.env.dNFT_ADDRESS);
-  const totalSupply = await contract.methods.totalSupply().call();
-
-  let latestVersion = await supabase
+/**
+ *
+ */
+async function getNewVersion() {
+  let oldVersion = await supabase
     .from("nfts")
     .select("version")
     .limit(1)
@@ -70,19 +55,25 @@ async function refreshNftTable() {
       ascending: false,
     });
 
-  try {
-    latestVersion = latestVersion.data[0].version + 1;
-  } catch (e) {
-    latestVersion = 0;
-  }
+  return oldVersion.data[0].version + 1;
+}
+
+/**
+ * Upsert all NFTs from 0 to totalSupply
+ */
+async function upsertNfts() {
+  const newVersion = await getNewVersion();
+  console.log(`new version: ${newVersion}`);
+
+  const totalSupply = await dNftContract.methods.totalSupply().call();
 
   for (let i = 0; i < totalSupply; i++) {
-    fetchNft(i, latestVersion);
+    upsertNft(i, newVersion);
   }
 }
 
-async function pushSyncEvent() {
-  console.log("pushing sync event");
+async function insertSyncEvent() {
+  console.log("inserting sync event");
   const { error } = await supabase.from("sync").insert({
     contractAddress: process.env.dNFT_ADDRESS,
     mode: process.env.MODE,
@@ -101,13 +92,13 @@ function subscribeToSync() {
       ],
     },
     function (error, result) {
-      refreshNftTable();
-      pushSyncEvent();
+      upsertNfts();
+      insertSyncEvent();
 
       if (!error) console.log(result);
     }
   );
 }
 
-refreshNftTable();
+upsertNfts();
 subscribeToSync();
