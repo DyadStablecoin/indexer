@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import Web3 from "web3";
 import Contract from "web3-eth-contract";
 import dNFT_ABI from "./abi/dNFT.json" assert { type: "json" };
+import { getEnsName } from "./utils/ensName.js";
 import * as dotenv from "dotenv";
 dotenv.config();
 
@@ -102,6 +103,31 @@ async function insertSyncEvent() {
 }
 
 /**
+ * Get the ens names of all NFT owners and store them in the nfts table
+ */
+async function upsertEnsNames() {
+  console.log("upserting ens names");
+  let nfts = await supabase.from("nfts").select("id, owner");
+
+  let owners = [];
+  nfts.data.map((nft) => {
+    owners.push(nft.owner);
+  });
+  let ensNames = await getEnsName(owners);
+
+  let ids2EnsName = [];
+  ensNames.map((ensName, i) => {
+    ids2EnsName.push({
+      id: nfts.data[i].id,
+      ensName: ensName,
+    });
+  });
+
+  const { error } = await supabase.from("nfts").upsert(ids2EnsName);
+  console.log(error);
+}
+
+/**
  * listen to sync events and upsert all NFTs
  */
 function subscribeToSync() {
@@ -116,6 +142,7 @@ function subscribeToSync() {
     },
     function (error, result) {
       upsertNfts();
+      upsertEnsNames();
 
       if (!error) console.log(result);
     }
