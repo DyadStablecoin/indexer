@@ -67,6 +67,7 @@ async function insertLatestVersion(newVersion) {
   const { error } = await supabase.from("versions").insert({
     version: newVersion,
     contractAddress: process.env.dNFT_ADDRESS,
+    mode: process.env.MODE,
   });
   console.log(error);
 }
