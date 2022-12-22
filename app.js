@@ -50,10 +50,10 @@ async function getLastVersion() {
   let oldVersion = await supabase
     .from("nfts")
     .select("version")
-    .limit(1)
     .order("version", {
-      ascending: false,
-    });
+      ascending: true,
+    })
+    .limit(1);
 
   try {
     return oldVersion.data[0].version + 1;
@@ -62,14 +62,20 @@ async function getLastVersion() {
   }
 }
 
-async function deleteOldNfts(oldVersion) {
+async function deleteOldNfts(newVersion) {
+  console.log(newVersion);
   console.log("deleting old nfts");
   const { error } = await supabase
     .from("nfts")
     .delete()
-    .eq("contractAddress", process.env.dNFT_ADDRESS)
-    .lte("version", oldVersion);
+    .lt("version", newVersion);
   console.log(error);
+
+  const { error: error2 } = await supabase
+    .from("nfts")
+    .delete()
+    .neq("contractAddress", process.env.dNFT_ADDRESS);
+  console.log(error2);
 }
 
 /**
@@ -83,10 +89,11 @@ async function upsertNfts() {
   const totalSupply = await dNftContract.methods.totalSupply().call();
 
   for (let i = 0; i < totalSupply; i++) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
     upsertNft(i, newVersion);
   }
 
-  deleteOldNfts(lastVersion);
+  deleteOldNfts(newVersion);
   insertSyncEvent();
 }
 
