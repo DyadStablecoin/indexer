@@ -47,28 +47,28 @@ async function upsertNft(i, newVersion) {
  *
  */
 async function getLastVersion() {
-  let oldVersion = await supabase
-    .from("nfts")
+  let lastVersion = await supabase
+    .from("versions")
     .select("version")
-    .limit(1)
     .order("version", {
       ascending: false,
-    });
+    })
+    .limit(1);
 
   try {
-    return oldVersion.data[0].version + 1;
+    return lastVersion.data[0].version;
   } catch {
     return 0;
   }
 }
 
-async function deleteOldNfts(oldVersion) {
-  console.log("deleting old nfts");
-  const { error } = await supabase
-    .from("nfts")
-    .delete()
-    .eq("contractAddress", process.env.dNFT_ADDRESS)
-    .lte("version", oldVersion);
+async function insertLatestVersion(newVersion) {
+  console.log("inserting latest version");
+  const { error } = await supabase.from("versions").insert({
+    version: newVersion,
+    contractAddress: process.env.dNFT_ADDRESS,
+    mode: process.env.MODE,
+  });
   console.log(error);
 }
 
@@ -83,23 +83,12 @@ async function upsertNfts() {
   const totalSupply = await dNftContract.methods.totalSupply().call();
 
   for (let i = 0; i < totalSupply; i++) {
+    // without this supabase will throw an error, because of too many requests
+    await new Promise((resolve) => setTimeout(resolve, 10));
     upsertNft(i, newVersion);
   }
 
-  deleteOldNfts(lastVersion);
-  insertSyncEvent();
-}
-
-/**
- *
- */
-async function insertSyncEvent() {
-  console.log("inserting sync event");
-  const { error } = await supabase.from("sync").insert({
-    contractAddress: process.env.dNFT_ADDRESS,
-    mode: process.env.MODE,
-  });
-  console.log(error);
+  insertLatestVersion(newVersion);
 }
 
 /**
