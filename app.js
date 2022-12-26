@@ -124,7 +124,7 @@ function subscribeToSync() {
   web3.eth.subscribe(
     "logs",
     {
-      address: process.env.POOL_ADDRESS,
+      address: process.env.dNFT_ADDRESS,
       topics: [
         "0xff14d8520387b9b85d2a017dc41ae15db04a22d4c67deac04eb45048631ffa86",
       ],
