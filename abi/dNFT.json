@@ -404,6 +404,11 @@
           "internalType": "uint256",
           "name": "xp",
           "type": "uint256"
+        }, 
+        {
+          "internalType": "bool",
+          "name": "isLiquidatable",
+          "type": "bool"
         }
       ],
       "stateMutability": "view",
