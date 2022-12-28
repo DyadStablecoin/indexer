@@ -127,7 +127,7 @@ function subscribeToSync() {
     {
       address: process.env.dNFT_ADDRESS,
       topics: [
-        "0xff14d8520387b9b85d2a017dc41ae15db04a22d4c67deac04eb45048631ffa86",
+        "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
       ],
     },
     function (error, result) {
