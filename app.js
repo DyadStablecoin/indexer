@@ -21,7 +21,7 @@ const dNftContract = new Contract(dNFT_ABI["abi"], process.env.dNFT_ADDRESS);
  * @param {i} index from 0 to totalSupply
  * @param {newVersion} version of the sync
  */
-async function upsertNft(i, newVersion) {
+async function insertNft(i, newVersion) {
   console.log(i);
 
   const tokenId = await dNftContract.methods.tokenByIndex(i).call();
@@ -29,19 +29,19 @@ async function upsertNft(i, newVersion) {
   const owner = await dNftContract.methods.ownerOf(tokenId).call();
 
   const _nft = {
-    id: tokenId,
     xp: nft.xp,
     deposit: nft.deposit,
     withdrawn: nft.withdrawn,
+    tokenId: tokenId,
     isLiquidatable: nft.isLiquidatable,
     owner: owner,
     contractAddress: process.env.dNFT_ADDRESS,
     version: newVersion,
   };
 
-  console.log(`upsert ${tokenId}`);
-  const { error } = await supabase.from("nfts").upsert(_nft);
-  console.log(error);
+  console.log(`insert ${tokenId}`);
+  const { error } = await supabase.from("nfts").insert(_nft);
+  console.log("insert", error);
 }
 
 /**
@@ -73,23 +73,27 @@ async function insertLatestVersion(newVersion) {
   console.log(error);
 }
 
+async function sleep(ms) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /**
  * Upsert all NFTs from 0 to totalSupply
  */
-async function upsertNfts() {
+async function insertNfts() {
   const lastVersion = await getLastVersion();
   const newVersion = lastVersion + 1;
   console.log(`new version: ${newVersion}`);
 
   const totalSupply = await dNftContract.methods.totalSupply().call();
 
+  insertLatestVersion(newVersion);
+
   for (let i = 0; i < totalSupply; i++) {
     // without this supabase will throw an error, because of too many requests
-    await new Promise((resolve) => setTimeout(resolve, 10));
-    upsertNft(i, newVersion);
+    await sleep(10);
+    insertNft(i, newVersion);
   }
-
-  insertLatestVersion(newVersion);
 }
 
 /**
@@ -118,7 +122,7 @@ async function upsertEnsNames() {
 }
 
 /**
- * listen to sync events and upsert all NFTs
+ * listen to sync events and insert all NFTs
  */
 function subscribeToSync() {
   console.log("subscribing to sync");
@@ -131,7 +135,7 @@ function subscribeToSync() {
       ],
     },
     function (error, result) {
-      upsertNfts();
+      insertNfts();
       upsertEnsNames();
 
       if (!error) console.log(result);
@@ -139,5 +143,5 @@ function subscribeToSync() {
   );
 }
 
-upsertNfts();
+insertNfts();
 subscribeToSync();
