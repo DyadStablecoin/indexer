@@ -101,7 +101,11 @@ async function insertNfts() {
  */
 async function upsertEnsNames() {
   console.log("upserting ens names");
-  let nfts = await supabase.from("nfts").select("id, owner");
+  let nfts = await supabase
+    .from("nfts")
+    .select("id, owner")
+    .eq("contractAddress", process.env.dNFT_ADDRESS)
+    .eq("version_id", lastSyncVersion);
 
   let owners = [];
   nfts.data.map((nft) => {
