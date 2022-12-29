@@ -36,7 +36,7 @@ async function insertNft(i, newVersion) {
     isLiquidatable: nft.isLiquidatable,
     owner: owner,
     contractAddress: process.env.dNFT_ADDRESS,
-    version: newVersion,
+    version_id: newVersion,
   };
 
   console.log(`insert ${tokenId}`);
@@ -136,7 +136,7 @@ function subscribeToSync() {
     },
     function (error, result) {
       insertNfts();
-      upsertEnsNames();
+      // upsertEnsNames();
 
       if (!error) console.log(result);
     }
