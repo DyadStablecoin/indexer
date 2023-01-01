@@ -3,7 +3,7 @@ import Web3 from "web3";
 import Contract from "web3-eth-contract";
 import dNFT_ABI from "./abi/dNFT.json" assert { type: "json" };
 import * as dotenv from "dotenv";
-import sleep from "./utils/sleep";
+import { sleep } from "./utils/sleep.js";
 dotenv.config();
 
 const SYNC_LOG_SIGNATURE =
