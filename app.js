@@ -4,6 +4,7 @@ import Contract from "web3-eth-contract";
 import dNFT_ABI from "./abi/dNFT.json" assert { type: "json" };
 import * as dotenv from "dotenv";
 import { sleep } from "./utils/sleep.js";
+import { getEnsName } from "./utils/ensName.js";
 dotenv.config();
 
 const SYNC_LOG_SIGNATURE =
@@ -79,6 +80,30 @@ async function insertNextVersion(nextVersion) {
   console.log(error);
 }
 
+async function upsertEns() {
+  const lastVersion = await getLastVersion();
+
+  const { data } = await supabase
+    .from("nfts")
+    .select("*")
+    .eq("version_id", lastVersion);
+
+  const owners = data.map((nft) => nft.owner);
+  const ensNames = await getEnsName(owners);
+
+  const ensObjects = owners.map((owner, i) => {
+    return {
+      address: owner,
+      ens: ensNames[i],
+    };
+  });
+
+  await supabase.from("ens").upsert(ensObjects, {
+    upsert: true,
+    ignoreDuplicates: true,
+  });
+}
+
 /**
  * Get all dNFTs for this sync version and insert them into the nfts table.
  */
@@ -109,7 +134,10 @@ function subscribeToSync() {
       address: process.env.dNFT_ADDRESS,
       topics: [SYNC_LOG_SIGNATURE],
     },
-    () => insertNfts()
+    () => {
+      insertNfts();
+      upsertEns();
+    }
   );
 }
 
