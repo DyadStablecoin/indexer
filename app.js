@@ -12,10 +12,10 @@ const SYNC_LOG_SIGNATURE =
 const TIME_BETWEEN_NFT_INSERTIONS = 10; // ms
 
 const supabase = createClient(
-  process.env.MODE === "LOCAL"
+  process.env.MODE === "DEV"
     ? process.env.SUPABASE_URL_DEV
     : process.env.SUPABASE_URL_PROD,
-  process.env.MODE === "LOCAL"
+  process.env.MODE === "DEV"
     ? process.env.SUPABASE_KEY_DEV
     : process.env.SUPABASE_KEY_PROD
 );
