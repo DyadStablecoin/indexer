@@ -98,10 +98,7 @@ async function upsertEns() {
     };
   });
 
-  const { error } = await supabase.from("ens").upsert(ensObjects, {
-    upsert: true,
-    ignoreDuplicates: true,
-  });
+  const { error } = await supabase.from("ens").upsert(ensObjects, {});
   console.log("upsertEns error:", error);
 }
 
