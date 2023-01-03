@@ -98,12 +98,12 @@ async function upsertEns() {
     };
   });
 
-  const {error} = await supabase.from("ens").upsert(ensObjects, {
+  const { error } = await supabase.from("ens").upsert(ensObjects, {
     upsert: true,
     ignoreDuplicates: true,
   });
-  console.log("upsertEns error:", error)
-
+  console.log("upsertEns error:", error);
+}
 
 /**
  * Get all dNFTs for this sync version and insert them into the nfts table.
