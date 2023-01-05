@@ -110,9 +110,7 @@ async function insertNfts(event) {
   const lastVersion = await getLastVersion();
   const nextVersion = lastVersion + 1;
 
-  console.log(event);
   const syncId = parseEvent(event).syncId;
-  console.log(syncId);
   insertNextVersion(nextVersion, syncId);
 
   const totalSupply = await dNftContract.methods.totalSupply().call();
@@ -149,5 +147,5 @@ function subscribeToSync() {
   );
 }
 
-// insertNfts();
+insertNfts();
 subscribeToSync();
