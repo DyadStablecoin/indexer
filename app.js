@@ -147,5 +147,4 @@ function subscribeToSync() {
   );
 }
 
-insertNfts();
 subscribeToSync();
