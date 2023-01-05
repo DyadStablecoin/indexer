@@ -70,12 +70,13 @@ async function getLastVersion() {
   }
 }
 
-async function insertNextVersion(nextVersion) {
-  console.log("inserting next version");
+async function insertNextVersion(nextVersion, syncId) {
+  console.log(`inserting next version: ${nextVersion}`);
   const { error } = await supabase.from("versions").insert({
     version: nextVersion,
     contractAddress: process.env.dNFT_ADDRESS,
     mode: process.env.MODE,
+    sync_id: syncId,
   });
   console.log(error);
 }
@@ -105,19 +106,26 @@ async function upsertEns() {
 /**
  * Get all dNFTs for this sync version and insert them into the nfts table.
  */
-async function insertNfts() {
+async function insertNfts(event) {
   const lastVersion = await getLastVersion();
   const nextVersion = lastVersion + 1;
-  console.log(`next version: ${nextVersion}`);
+
+  const syncId = parseEvent(event).syncId;
+  insertNextVersion(nextVersion, syncId);
 
   const totalSupply = await dNftContract.methods.totalSupply().call();
-  insertNextVersion(nextVersion);
 
   for (let i = 0; i < totalSupply; i++) {
     // without this supabase will throw an error, because of too many requests
     await sleep(TIME_BETWEEN_NFT_INSERTIONS);
     insertNft(i, nextVersion);
   }
+}
+
+function parseEvent(event) {
+  return {
+    syncId: parseInt(event["data"]),
+  };
 }
 
 /**
@@ -132,12 +140,11 @@ function subscribeToSync() {
       address: process.env.dNFT_ADDRESS,
       topics: [SYNC_LOG_SIGNATURE],
     },
-    () => {
-      insertNfts();
+    (_, event) => {
+      insertNfts(event);
       upsertEns();
     }
   );
 }
 
-insertNfts();
 subscribeToSync();
