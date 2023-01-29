@@ -40,7 +40,7 @@ async function insertNft(tokenId, nextVersion) {
   const _nft = {
     xp: nft.xp,
     deposit: nft.deposit,
-    withdrawn: nft.withdrawn,
+    withdrawn: nft.withdrawal,
     tokenId: tokenId,
     owner: owner,
     contractAddress: process.env.dNFT_ADDRESS,
