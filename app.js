@@ -31,10 +31,9 @@ const dNftContract = new Contract(dNFT_ABI["abi"], process.env.dNFT_ADDRESS);
  * @param {i} index from 0 to totalSupply
  * @param {nextVersion} version of the sync
  */
-async function insertNft(i, nextVersion) {
-  console.log(i);
+async function insertNft(tokenId, nextVersion) {
+  console.log(tokenId);
 
-  const tokenId = await dNftContract.methods.tokenByIndex(i).call();
   const nft = await dNftContract.methods.idToNft(tokenId).call();
   const owner = await dNftContract.methods.ownerOf(tokenId).call();
 
@@ -43,7 +42,6 @@ async function insertNft(i, nextVersion) {
     deposit: nft.deposit,
     withdrawn: nft.withdrawn,
     tokenId: tokenId,
-    isLiquidatable: nft.isLiquidatable,
     owner: owner,
     contractAddress: process.env.dNFT_ADDRESS,
     version_id: nextVersion,
